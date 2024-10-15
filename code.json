@@ -1,0 +1,108 @@
+{
+  "Comment": "Ferramenta para geração de exercícios com o uso da LLM Haiku, da Amazon Bedrock",
+  "StartAt": "Prompt 1 - Dicas de Exercícios",
+  "States": {
+    "Prompt 1 - Dicas de Exercícios": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::bedrock:invokeModel",
+      "Parameters": {
+        "ModelId": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+        "Body": {
+          "anthropic_version": "bedrock-2023-05-31",
+          "max_tokens": 500,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Com base na variável prompt1, estipule a capacidade da pessoa de praticar exercícios e qual o seu objetivo"
+                }
+              ]
+            }
+          ]
+        },
+        "ContentType": "application/json",
+        "Accept": "*/*"
+      },
+      "Next": "Add first result to conversation history",
+      "ResultPath": "$.result_one",
+      "ResultSelector": {
+        "result_one.$": "$.Body.content[0].text"
+      }
+    },
+    "Add first result to conversation history": {
+      "Type": "Pass",
+      "Next": "Prompt 2 - Adaptar para Academia",
+      "Parameters": {
+        "convo_one.$": "States.Format('{}\n{}', $.prompt_one, $.result_one.result_one)"
+      },
+      "ResultPath": "$.convo_one"
+    },
+    "Prompt 2 - Adaptar para Academia": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::bedrock:invokeModel",
+      "Parameters": {
+        "ModelId": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+        "Body": {
+          "anthropic_version": "bedrock-2023-05-31",
+          "max_tokens": 500,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "De acordo com o prompt2, crie uma lista de exercícios para se praticar durante uma semana, com base na atividade pedida"
+                }
+              ]
+            }
+          ]
+        },
+        "ContentType": "application/json",
+        "Accept": "*/*"
+      },
+      "Next": "Add second result to conversation history",
+      "ResultSelector": {
+        "result_two.$": "$.Body.content[0].text"
+      },
+      "ResultPath": "$.result_two"
+    },
+    "Add second result to conversation history": {
+      "Type": "Pass",
+      "Next": "Prompt 3 - Restrição individual",
+      "Parameters": {
+        "convo_two.$": "States.Format('{}\n{}\n{}', $.convo_one.convo_one, $.prompt_two, $.result_two.result_two)"
+      },
+      "ResultPath": "$.convo_two"
+    },
+    "Prompt 3 - Restrição individual": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::bedrock:invokeModel",
+      "Parameters": {
+        "ModelId": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+        "Body": {
+          "anthropic_version": "bedrock-2023-05-31",
+          "max_tokens": 500,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Com base no prompt3, adapte a lista de exercícios para a pessoa, com base nas suas restrições"
+                }
+              ]
+            }
+          ]
+        },
+        "ContentType": "application/json",
+        "Accept": "*/*"
+      },
+      "End": true,
+      "ResultSelector": {
+        "result_three.$": "$.Body.content[0].text"
+      }
+    }
+  }
+}
